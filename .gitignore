@@ -170,3 +170,4 @@ venv.bak/
 
 # user ignore 
 model/
+test/
