@@ -16,21 +16,19 @@ def content_loss(sess, model):
 
 
 def style_loss(sess, model):
-    def _gram_matrix(tensor):
-        filter = tensor.get_shape()[3]
-
-        matrix = tf.reshape(tensor, shape=[-1, filter])
+    def _gram_matrix(F, N, M):
+        matrix = tf.reshape(F, (M, N))
         return tf.matmul(tf.transpose(matrix), matrix)
 
-    loss_style = list()
-    for layer, ratio in STYLE_LAYERS:
-        layer_tensor = model[layer]
-        shape = layer_tensor.get_shape()
-        N = shape[3]
-        M = shape[1] * shape[2]
+    def _loss(a, x):
+        N = a.shape[3]
+        M = a.shape[1] * a.shape[2]
 
-        loss = (1/(4 * N ** 2 * M ** 2)) * \
-               tf.pow(_gram_matrix(sess.run(layer_tensor)) - _gram_matrix(layer_tensor), 2)
-        loss_style.append(loss * ratio)
+        A = _gram_matrix(a, N, M)
+        X = _gram_matrix(x, N, M)
+        return (1 / 4 * N ** 2 * M ** 2) * tf.reduce_mean(tf.pow(A - X, 2))
 
-    return sum(loss_style)
+    E = [_loss(sess.run(model[layer_name]), model[layer_name]) for layer_name, _ in STYLE_LAYERS]
+    W = [w for _, w in STYLE_LAYERS]
+    style = sum([W[l] * E[l] for l in range(len(STYLE_LAYERS))])
+    return style
