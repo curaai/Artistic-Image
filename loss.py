@@ -12,7 +12,7 @@ STYLE_LAYERS = [
 
 
 def content_loss(sess, model):
-    return 1 / 2 * tf.pow(sess.run(model['conv4_1']) - model['conv4_1'], 2)
+    return 1 / 2 * tf.reduce_sum(tf.pow(sess.run(model['conv4_1']) - model['conv4_1'], 2))
 
 
 def style_loss(sess, model):

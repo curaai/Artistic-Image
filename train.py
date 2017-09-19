@@ -11,11 +11,13 @@ if __name__ == '__main__':
     content_path = "image/content.jpg"
     style_path = "image/style.jpg"
     output_path = "output/"
+    save_path = "save/"
+    save_file = "test"
 
-    ALPHA = 1
+    ALPHA = 1 
     BETA = 10000
 
-    learning_rate = 0.0001
+    learning_rate = 5e-2 
     ITERATION = 1000
 
     with tf.Session() as sess:
@@ -53,4 +55,4 @@ if __name__ == '__main__':
                 # save image
                 util.save_image(output_path + str(i) + '.jpg', artistic_image)
 
-        saver.save(sess, "save.ckpt")
+        saver.save(sess, save_path + save_file)
