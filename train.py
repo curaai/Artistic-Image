@@ -32,7 +32,7 @@ if __name__ == '__main__':
         input_image = util.generate_noise_image(content_image, width, height)
         model = vgg.load_vgg_model(args.model_path, width, height)
 
-        sess.run(tf.initialize_all_variables())
+        sess.run(tf.global_variables_initializer())
 
         sess.run(model['input'].assign(content_image))
         content_loss = loss.content_loss(sess, model)
@@ -46,6 +46,7 @@ if __name__ == '__main__':
 
         # train
         print('Training Start !!!')
+        sess.run(tf.global_variables_initializer())
         sess.run(model['input'].assign(input_image))
         for i in range(args.iteration):
             sess.run(optimizer)
