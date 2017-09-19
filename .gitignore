@@ -170,16 +170,7 @@ venv.bak/
 
 # user ignore 
 model/
-<<<<<<< HEAD
 test/
-
 output/
 save/
-before_img/
 image/
-=======
-test/
-
-output/
-save/
-before_img/
