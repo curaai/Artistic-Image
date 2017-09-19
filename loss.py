@@ -3,16 +3,19 @@ import numpy as np
 
 
 STYLE_LAYERS = [
-    ('conv1_1', 0.2),
-    ('conv2_1', 0.2),
-    ('conv3_1', 0.2),
-    ('conv4_1', 0.2),
-    ('conv5_1', 0.2)
+    ('conv1_1', 0.5),
+    ('conv2_1', 1.0),
+    ('conv3_1', 1.5),
+    ('conv4_1', 3.0),
+    ('conv5_1', 4.0)
 ]
 
 
 def content_loss(sess, model):
-    return 1 / 2 * tf.pow(sess.run(model['conv4_1']) - model['conv4_1'], 2)
+    shape = sess.run(model['conv4_2']).shape
+    N = shape[3]
+    M = shape[1] * shape[2]
+    return (1 / (4 * N * M)) * tf.reduce_sum(tf.pow(sess.run(model['conv4_2']) - model['conv4_2'], 2))
 
 
 def style_loss(sess, model):
@@ -26,7 +29,7 @@ def style_loss(sess, model):
 
         A = _gram_matrix(a, N, M)
         X = _gram_matrix(x, N, M)
-        return (1 / 4 * N ** 2 * M ** 2) * tf.reduce_mean(tf.pow(A - X, 2))
+        return (1 / (4 * N ** 2 * M ** 2)) * tf.reduce_mean(tf.pow(A - X, 2))
 
     E = [_loss(sess.run(model[layer_name]), model[layer_name]) for layer_name, _ in STYLE_LAYERS]
     W = [w for _, w in STYLE_LAYERS]

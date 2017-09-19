@@ -4,7 +4,7 @@ import numpy as np
 import loss
 import vgg
 import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
 
 if __name__ == '__main__':
     model_path = 'model/imagenet-vgg-verydeep-19.mat'
@@ -12,19 +12,19 @@ if __name__ == '__main__':
     style_path = "image/style.jpg"
     output_path = "output/"
 
-    ALPHA = 1
-    BETA = 10000
+    ALPHA = 5
+    BETA = 100
 
     learning_rate = 0.0001
     ITERATION = 1000
 
-    with tf.Session() as sess:
+    with tf.InteractiveSession() as sess:
         content_image = util.load_image(content_path)
         style_image = util.load_image(style_path)
         input_image = util.generate_noise_image(content_image)
         model = vgg.load_vgg_model(model_path)
 
-        sess.run(tf.global_variables_initializer())
+        sess.run(tf.initialize_all_variables())
 
         sess.run(model['input'].assign(content_image))
         content_loss = loss.content_loss(sess, model)
@@ -34,11 +34,10 @@ if __name__ == '__main__':
 
         saver = tf.train.Saver()
 
-        optimizer = tf.train.AdamOptimizer(learning_rate).minimize(total_loss)
+        optimizer = tf.train.AdamOptimizer(2.0).minimize(total_loss)
 
         # train
         print('Training Start !!!')
-        sess.run(tf.global_variables_initializer())
         sess.run(model['input'].assign(input_image))
         for i in range(ITERATION):
             sess.run(optimizer)
@@ -53,4 +52,4 @@ if __name__ == '__main__':
                 # save image
                 util.save_image(output_path + str(i) + '.jpg', artistic_image)
 
-        saver.save(sess, "save.ckpt")
+        saver.save(sess, "model.ckpt")
