@@ -2,7 +2,7 @@ import numpy as np
 from scipy.misc import imread, imsave
 
 # mean of content, style
-MEAN = [108.02542396, 107.35208125, 89.18647604]
+MEAN = np.array([108.02542396, 107.35208125, 89.18647604]).reshape((1, 1, 1, 3))
 
 
 # TODO GENERATE_NOISE_IMAGE는 복붙했음 일단 결과부터 보고 나중에 공부하자

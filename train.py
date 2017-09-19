@@ -4,7 +4,7 @@ import numpy as np
 import loss
 import vgg
 import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
 
 if __name__ == '__main__':
     model_path = 'model/imagenet-vgg-verydeep-19.mat'
@@ -17,7 +17,7 @@ if __name__ == '__main__':
     ALPHA = 1 
     BETA = 10000
 
-    learning_rate = 5e-2 
+    learning_rate = 0.1 
     ITERATION = 1000
 
     with tf.Session() as sess:
