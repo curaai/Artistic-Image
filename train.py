@@ -1,28 +1,36 @@
 import tensorflow as tf
+import argparse
+import os
+
 import util
-import numpy as np
 import loss
 import vgg
-import os
 
 
 if __name__ == '__main__':
-    model_path = 'model/imagenet-vgg-verydeep-19.mat'
-    content_path = "image/content.jpg"
-    style_path = "image/style.jpg"
-    output_path = "output/"
+    parser = argparse.ArgumentParser()
+    
+    parser.add_argument('--model_path', default='model/imagenet-vgg-verydeep-19.mat', help='insert vgg model path')
+    parser.add_argument('--content', help='Insert Content Image_path', Required=True)
+    parser.add_argument('--style', help='Insert style Image_path', Required=True)
+    parser.add_argument('--image_width', type=int, help='image width', Required=True)
+    parser.add_argument('--image_height', type=int, help='image height', Required=True)
+    parser.add_argument('--output', help='Train result output')
+    parser.add_argument('--save_model', help='Save Trained Model', Required=True)
 
-    ALPHA = 5
-    BETA = 100
+    parser.add_argument('--ALPHA', type=int, default=5, help='Used in train Content loss')
+    parser.add_argument('--BETA', type=int, default=100, help='Used in train Style loss')
+    parser.add_argument('--learning_rate', type=float, default=2.0, help='Learning rate ...')
+    parser.add_argument('--iteration', type=int, default=1000, help='Train iteration count')
 
-    learning_rate = 0.0001
-    ITERATION = 1000
+    args = parser.parse_args()
 
-    with tf.InteractiveSession() as sess:
-        content_image = util.load_image(content_path)
-        style_image = util.load_image(style_path)
-        input_image = util.generate_noise_image(content_image)
-        model = vgg.load_vgg_model(model_path)
+    with tf.Session() as sess:
+        width, height = args.image_width, args.image_heigth
+        content_image = util.load_image(args.content, width, height)
+        style_image = util.load_image(args.style, width, height)
+        input_image = util.generate_noise_image(content_image, width, height)
+        model = vgg.load_vgg_model(args.model_path, width, height)
 
         sess.run(tf.initialize_all_variables())
 
@@ -30,26 +38,25 @@ if __name__ == '__main__':
         content_loss = loss.content_loss(sess, model)
         sess.run(model['input'].assign(style_image))
         style_loss = loss.style_loss(sess, model)
-        total_loss = ALPHA * content_loss + BETA * style_loss
+        total_loss = args.alpha * content_loss + args.beta * style_loss
 
         saver = tf.train.Saver()
 
-        optimizer = tf.train.AdamOptimizer(2.0).minimize(total_loss)
+        optimizer = tf.train.AdamOptimizer(args.learning_rate).minimize(total_loss)
 
         # train
         print('Training Start !!!')
         sess.run(model['input'].assign(input_image))
-        for i in range(ITERATION):
+        for i in range(args.iteration):
             sess.run(optimizer)
             if i % 100 == 0:
                 artistic_image = sess.run(model['input'])
                 print("iteration:", str(i))
                 print("cost:", sess.run(total_loss))
 
-                if not os.path.exists(output_path):
-                    os.mkdir(output_path)
+        # save image
+        util.save_image('result.jpg', artistic_image)
 
-                # save image
-                util.save_image(output_path + str(i) + '.jpg', artistic_image)
-
-        saver.save(sess, "model.ckpt")
+        if not os.path.isdir(args.save_model):
+            os.makedirs(args.save_model)
+        saver.save(sess, args.save_model)

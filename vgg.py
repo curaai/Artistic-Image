@@ -3,12 +3,7 @@ import numpy as np
 from scipy.io import loadmat
 
 
-IMAGE_WIDTH = 800
-IMAGE_HEIGHT = 600
-IMAGE_CHANNEL = 3
-
-
-def load_vgg_model(model_path):
+def load_vgg_model(model_path, IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_CHANNEL=3):
     vgg = loadmat(model_path)
     vgg_layers = vgg['layers']
 
@@ -108,8 +103,3 @@ def load_vgg_model(model_path):
     graph['avgpool5'] = _avgpool(graph['conv5_4'])
 
     return graph
-
-# test
-if __name__ == '__main__':
-    model_path = "model/imagenet-vgg-verydeep-19.mat"
-    load_vgg_model(model_path)

@@ -31,7 +31,5 @@ def style_loss(sess, model):
         X = _gram_matrix(x, N, M)
         return (1 / (4 * N ** 2 * M ** 2)) * tf.reduce_mean(tf.pow(A - X, 2))
 
-    E = [_loss(sess.run(model[layer_name]), model[layer_name]) for layer_name, _ in STYLE_LAYERS]
-    W = [w for _, w in STYLE_LAYERS]
-    style = sum([W[l] * E[l] for l in range(len(STYLE_LAYERS))])
+    style = sum([_loss(sess.run(model[layer_name]), model[layer_name]) * w for layer_name, w in STYLE_LAYERS])
     return style
