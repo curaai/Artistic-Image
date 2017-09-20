@@ -15,7 +15,6 @@ if __name__ == '__main__':
     parser.add_argument('--style', help='Insert style Image_path')
     parser.add_argument('--image_width', type=int, help='image width')
     parser.add_argument('--image_height', type=int, help='image height')
-    parser.add_argument('--output', help='Train result output')
     parser.add_argument('--save_model', default='save/model', help='Save Trained Model')
 
     parser.add_argument('--ALPHA', type=int, default=5, help='Used in train Content loss')
@@ -38,7 +37,7 @@ if __name__ == '__main__':
         content_loss = loss.content_loss(sess, model)
         sess.run(model['input'].assign(style_image))
         style_loss = loss.style_loss(sess, model)
-        total_loss = args.alpha * content_loss + args.beta * style_loss
+        total_loss = args.ALPHA * content_loss + args.BETA * style_loss
 
         saver = tf.train.Saver()
 
