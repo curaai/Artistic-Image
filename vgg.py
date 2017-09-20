@@ -64,8 +64,8 @@ def load_vgg_model(model_path, IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_CHANNEL=3):
 
     def _conv2d(prev_layer, layer, name):
         W, b = _weights_and_bias(layer)
-        W = tf.constant(W, dtype='float32', name=name + "_weight")
-        b = tf.constant(np.reshape(b, b.size), dtype='float32', name=name + "_bias")
+        W = tf.Variable(W, dtype='float32', name=name + "_weight")
+        b = tf.Variable(np.reshape(b, b.size), dtype='float32', name=name + "_bias")
         return tf.nn.conv2d(
             prev_layer, W, strides=[1, 1, 1, 1], padding='SAME'
             ) + b
@@ -79,32 +79,33 @@ def load_vgg_model(model_path, IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_CHANNEL=3):
 
     # each weight size (1, width, height, filter)
     graph = dict()
-    graph['input']    = tf.Variable(np.zeros((1, IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNEL)), dtype='float32')
-    with tf.variable_scope("conv1"):
-        graph['conv1_1']  = _conv2d_relu(graph['input'],    vgg_dict['conv1_1'], 'conv1_1')
-        graph['conv1_2']  = _conv2d_relu(graph['conv1_1'],  vgg_dict['conv1_2'], 'conv1_2')
-        graph['avgpool1'] = _avgpool(graph['conv1_2'])
-    with tf.variable_scope("conv2"):
-        graph['conv2_1']  = _conv2d_relu(graph['avgpool1'], vgg_dict['conv2_1'], 'conv2_1')
-        graph['conv2_2']  = _conv2d_relu(graph['conv2_1'],  vgg_dict['conv2_2'], 'conv2_2')
-        graph['avgpool2'] = _avgpool(graph['conv2_2'])
-    with tf.variable_scope("conv3"):
-        graph['conv3_1']  = _conv2d_relu(graph['avgpool2'], vgg_dict['conv3_1'], 'conv3_1')
-        graph['conv3_2']  = _conv2d_relu(graph['conv3_1'],  vgg_dict['conv3_2'], 'conv3_2')
-        graph['conv3_3']  = _conv2d_relu(graph['conv3_2'],  vgg_dict['conv3_3'], 'conv3_3')
-        graph['conv3_4']  = _conv2d_relu(graph['conv3_3'],  vgg_dict['conv3_4'], 'conv3_4')
-        graph['avgpool3'] = _avgpool(graph['conv3_4'])
-    with tf.variable_scope("conv4"):
-        graph['conv4_1']  = _conv2d_relu(graph['avgpool3'], vgg_dict['conv4_1'], 'conv4_1')
-        graph['conv4_2']  = _conv2d_relu(graph['conv4_1'],  vgg_dict['conv4_2'], 'conv4_2')
-        graph['conv4_3']  = _conv2d_relu(graph['conv4_2'],  vgg_dict['conv4_3'], 'conv4_3')
-        graph['conv4_4']  = _conv2d_relu(graph['conv4_3'],  vgg_dict['conv4_4'], 'conv4_4')
-        graph['avgpool4'] = _avgpool(graph['conv4_4'])
-    with tf.variable_scope('conv5'):
-        graph['conv5_1']  = _conv2d_relu(graph['avgpool4'], vgg_dict['conv5_1'], 'conv5_1')
-        graph['conv5_2']  = _conv2d_relu(graph['conv5_1'],  vgg_dict['conv5_2'], 'conv5_2')
-        graph['conv5_3']  = _conv2d_relu(graph['conv5_2'],  vgg_dict['conv5_3'], 'conv5_3')
-        graph['conv5_4']  = _conv2d_relu(graph['conv5_3'],  vgg_dict['conv5_4'], 'conv5_4')
-        graph['avgpool5'] = _avgpool(graph['conv5_4'])
+    graph['input'] = tf.Variable(np.zeros((1, IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNEL)), dtype='float32')
+    with tf.variable_scope("vggnet"):
+        with tf.name_scope("conv1"):
+            graph['conv1_1']  = _conv2d_relu(graph['input'],    vgg_dict['conv1_1'], 'conv1_1')
+            graph['conv1_2']  = _conv2d_relu(graph['conv1_1'],  vgg_dict['conv1_2'], 'conv1_2')
+            graph['avgpool1'] = _avgpool(graph['conv1_2'])
+        with tf.name_scope("conv2"):
+            graph['conv2_1']  = _conv2d_relu(graph['avgpool1'], vgg_dict['conv2_1'], 'conv2_1')
+            graph['conv2_2']  = _conv2d_relu(graph['conv2_1'],  vgg_dict['conv2_2'], 'conv2_2')
+            graph['avgpool2'] = _avgpool(graph['conv2_2'])
+        with tf.name_scope("conv3"):
+            graph['conv3_1']  = _conv2d_relu(graph['avgpool2'], vgg_dict['conv3_1'], 'conv3_1')
+            graph['conv3_2']  = _conv2d_relu(graph['conv3_1'],  vgg_dict['conv3_2'], 'conv3_2')
+            graph['conv3_3']  = _conv2d_relu(graph['conv3_2'],  vgg_dict['conv3_3'], 'conv3_3')
+            graph['conv3_4']  = _conv2d_relu(graph['conv3_3'],  vgg_dict['conv3_4'], 'conv3_4')
+            graph['avgpool3'] = _avgpool(graph['conv3_4'])
+        with tf.name_scope("conv4"):
+            graph['conv4_1']  = _conv2d_relu(graph['avgpool3'], vgg_dict['conv4_1'], 'conv4_1')
+            graph['conv4_2']  = _conv2d_relu(graph['conv4_1'],  vgg_dict['conv4_2'], 'conv4_2')
+            graph['conv4_3']  = _conv2d_relu(graph['conv4_2'],  vgg_dict['conv4_3'], 'conv4_3')
+            graph['conv4_4']  = _conv2d_relu(graph['conv4_3'],  vgg_dict['conv4_4'], 'conv4_4')
+            graph['avgpool4'] = _avgpool(graph['conv4_4'])
+        with tf.name_scope('conv5'):
+            graph['conv5_1']  = _conv2d_relu(graph['avgpool4'], vgg_dict['conv5_1'], 'conv5_1')
+            graph['conv5_2']  = _conv2d_relu(graph['conv5_1'],  vgg_dict['conv5_2'], 'conv5_2')
+            graph['conv5_3']  = _conv2d_relu(graph['conv5_2'],  vgg_dict['conv5_3'], 'conv5_3')
+            graph['conv5_4']  = _conv2d_relu(graph['conv5_3'],  vgg_dict['conv5_4'], 'conv5_4')
+            graph['avgpool5'] = _avgpool(graph['conv5_4'])
 
     return graph

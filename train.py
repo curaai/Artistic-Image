@@ -11,10 +11,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     
     parser.add_argument('--model_path', default='model/imagenet-vgg-verydeep-19.mat', help='insert vgg model path')
-    parser.add_argument('--content', help='Insert Content Image_path')
-    parser.add_argument('--style', help='Insert style Image_path')
-    parser.add_argument('--image_width', type=int, help='image width')
-    parser.add_argument('--image_height', type=int, help='image height')
+    parser.add_argument('--content', default='image/content.jpg', help='Insert Content Image_path')
+    parser.add_argument('--style', default='image/style.jpg', help='Insert style Image_path')
+    parser.add_argument('--image_width', type=int, default=800, help='image width')
+    parser.add_argument('--image_height', type=int, default=600, help='image height')
     parser.add_argument('--save_model', default='save/model', help='Save Trained Model')
 
     parser.add_argument('--ALPHA', type=int, default=5, help='Used in train Content loss')
