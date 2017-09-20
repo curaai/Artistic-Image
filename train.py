@@ -16,7 +16,7 @@ if __name__ == '__main__':
     parser.add_argument('--image_width', type=int, help='image width')
     parser.add_argument('--image_height', type=int, help='image height')
     parser.add_argument('--output', help='Train result output')
-    parser.add_argument('--save_model', help='Save Trained Model')
+    parser.add_argument('--save_model', default='save/model', help='Save Trained Model')
 
     parser.add_argument('--ALPHA', type=int, default=5, help='Used in train Content loss')
     parser.add_argument('--BETA', type=int, default=100, help='Used in train Style loss')
@@ -58,6 +58,6 @@ if __name__ == '__main__':
         # save image
         util.save_image('result.jpg', artistic_image)
 
-        if not os.path.isdir(args.save_model):
-            os.makedirs(args.save_model)
+        if args.save_model == 'save/model' and not os.path.isdir('save'):
+            os.makedirs('save')            
         saver.save(sess, args.save_model)
