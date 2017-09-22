@@ -34,22 +34,25 @@ if __name__ == '__main__':
         sess.run(tf.global_variables_initializer())
 
         sess.run(model['input'].assign(input_image))
-        x_content = model['conv4_2']
-        x_style = [model['conv1_1'], model['conv2_1'], model['conv3_1'], model['conv4_1'], model['conv5_1']]
+        x_content = sess.run(model['conv4_2'])
+        x_style = [sess.run(model['conv' + str(i) + '_1']) for i in range(1, 6)]
 
         sess.run(model['input'].assign(content_image))
-        y_content = model['conv4_2']
-        content_loss = loss.content_loss(sess, x_content, y_content)
+        y_content = sess.run(model['conv4_2'])
+        content_loss = loss.content_loss(x_content, y_content)
 
         sess.run(model['input'].assign(style_image))
-        y_style = [model['conv1_1'], model['conv2_1'], model['conv3_1'], model['conv4_1'], model['conv5_1']]
-        style_loss = loss.style_loss(sess, x_style, y_style)
+        y_style = [sess.run(model['conv' + str(i) + '_1']) for i in range(1, 6)]
+        style_loss = loss.style_loss(x_style, y_style)
 
         total_loss = args.ALPHA * content_loss + args.BETA * style_loss
+        print(sess.run([style_loss]))
+        print(sess.run([content_loss]))
+        print(sess.run([total_loss]))
+
         optimizer = tf.train.AdamOptimizer(args.learning_rate).minimize(total_loss)
 
         saver = tf.train.Saver()
-
 
         # train
         print('Training Start !!!')
@@ -57,6 +60,7 @@ if __name__ == '__main__':
         sess.run(model['input'].assign(input_image))
         for i in range(args.iteration):
             sess.run(optimizer)
+            print("cost:", sess.run(total_loss))
             if i % 100 == 0:
                 artistic_image = sess.run(model['input'])
                 print("iteration:", str(i))

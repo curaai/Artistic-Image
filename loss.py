@@ -4,14 +4,14 @@ import tensorflow as tf
 STYLE_WEIGHTS = [ 0.5, 1.0, 1.5, 3.0, 4.0]
 
 
-def content_loss(sess, image, content):
-    shape = sess.run(image).shape
+def content_loss(image, content):
+    shape = image.shape
     N = shape[3]
     M = shape[1] * shape[2]
-    return (1 / (4 * N * M)) * tf.reduce_sum(tf.pow(sess.run(image) - sess.run(content), 2))
+    return (1 / (4 * N * M)) * tf.reduce_sum(tf.pow(image - content, 2))
 
 
-def style_loss(sess, image_layers, style_layers):
+def style_loss(image_layers, style_layers):
     def _gram_matrix(F, N, M):
         matrix = tf.reshape(F, (M, N))
         return tf.matmul(tf.transpose(matrix), matrix)
@@ -26,5 +26,5 @@ def style_loss(sess, image_layers, style_layers):
 
     losses = []
     for image, style, weight in zip(image_layers, style_layers, STYLE_WEIGHTS):
-        losses.append(_loss(sess.run(image), sess.run(style)) * weight)
+        losses.append(_loss(image, style) * weight)
     return sum(losses)
