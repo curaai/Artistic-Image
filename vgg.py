@@ -81,7 +81,7 @@ def load_vgg_model(model_path, IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_CHANNEL=3):
 
     # each weight size (1, width, height, filter)
     graph = dict()
-    graph['input'] = tf.Variable(np.zeros((1, IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNEL)), dtype='float32')
+    graph['input'] = tf.placeholder(tf.float32, [None, IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNEL])
     with tf.variable_scope("vggnet"):
         with tf.name_scope("conv1"):
             graph['conv1_1']  = _conv2d_relu(graph['input'],    vgg_dict['conv1_1'], 'conv1_1')

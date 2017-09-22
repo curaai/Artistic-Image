@@ -24,7 +24,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    with tf.Session() as sess:
+    with tf.Graph().as_default(), tf.Session() as sess:
         width, height = args.image_width, args.image_height
         content_image = util.load_image(args.content, width, height)
         style_image = util.load_image(args.style, width, height)
@@ -33,22 +33,18 @@ if __name__ == '__main__':
 
         sess.run(tf.global_variables_initializer())
 
-        sess.run(model['input'].assign(input_image))
-        x_content = sess.run(model['conv4_2'])
-        x_style = [sess.run(model['conv' + str(i) + '_1']) for i in range(1, 6)]
+        x_content = model['conv4_2']
+        x_style = [model['conv' + str(i) + '_1'] for i in range(1, 6)]
 
         sess.run(model['input'].assign(content_image))
-        y_content = sess.run(model['conv4_2'])
+        y_content = model['conv4_2']
         content_loss = loss.content_loss(x_content, y_content)
 
         sess.run(model['input'].assign(style_image))
-        y_style = [sess.run(model['conv' + str(i) + '_1']) for i in range(1, 6)]
+        y_style = [model['conv' + str(i) + '_1'] for i in range(1, 6)]
         style_loss = loss.style_loss(x_style, y_style)
 
         total_loss = args.ALPHA * content_loss + args.BETA * style_loss
-        print(sess.run([style_loss]))
-        print(sess.run([content_loss]))
-        print(sess.run([total_loss]))
 
         optimizer = tf.train.AdamOptimizer(args.learning_rate).minimize(total_loss)
 
