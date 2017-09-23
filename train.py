@@ -5,6 +5,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import util
 import loss
 import vgg
+import numpy
 
 
 if __name__ == '__main__':
@@ -29,43 +30,46 @@ if __name__ == '__main__':
         content_image = util.load_image(args.content, width, height)
         style_image = util.load_image(args.style, width, height)
         input_image = util.generate_noise_image(content_image, width, height)
-        model = vgg.load_vgg_model(args.model_path, width, height)
+        model = vgg.Model(args.model_path, width, height)
+        model.build()
 
         sess.run(tf.global_variables_initializer())
 
-        x_content = model['conv4_2']
-        x_style = [model['conv' + str(i) + '_1'] for i in range(1, 6)]
+        x_content = model.graph['conv4_2'][0]
+        x_style = [model.graph['conv' + str(i) + '_1'][0] for i in range(1, 6)]
 
-        sess.run(model['input'].assign(content_image))
-        y_content = model['conv4_2']
+        y_content = model.graph['conv4_2'][1]
         content_loss = loss.content_loss(x_content, y_content)
 
-        sess.run(model['input'].assign(style_image))
-        y_style = [model['conv' + str(i) + '_1'] for i in range(1, 6)]
+        y_style = [model.graph['conv' + str(i) + '_1'][2] for i in range(1, 6)]
         style_loss = loss.style_loss(x_style, y_style)
 
         total_loss = args.ALPHA * content_loss + args.BETA * style_loss
 
-        optimizer = tf.train.AdamOptimizer(args.learning_rate).minimize(total_loss)
+        default_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
+        vgg_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='vggnet')
+
+        optimizer = tf.train.AdamOptimizer(args.learning_rate).minimize(loss=total_loss, var_list=default_vars + vgg_vars)
 
         saver = tf.train.Saver()
+
+        feed_images = numpy.array([input_image, content_image, style_image], dtype=numpy.float32)
 
         # train
         print('Training Start !!!')
         sess.run(tf.global_variables_initializer())
-        sess.run(model['input'].assign(input_image))
         for i in range(args.iteration):
-            sess.run(optimizer)
-            print("cost:", sess.run(total_loss))
-            if i % 100 == 0:
-                artistic_image = sess.run(model['input'])
+            sess.run(optimizer, feed_dict={model.graph['input']: feed_images})
+            if i % 2 == 0:
+                artistic_image, cost = sess.run(
+                    [model.graph['input'], total_loss],
+                    feed_dict={model.graph['input']: numpy.reshape(input_image, (1,) + input_image.shape)})
+                
                 print("iteration:", str(i))
-                print("cost:", sess.run(total_loss))
-            if i % 3 == 0:
-                print("cost:", sess.run(total_loss))
+                print("cost:", cost)
 
-        # save image
-        util.save_image('result.jpg', artistic_image)
+                # save image
+                util.save_image(str(i) + '.jpg', artistic_image)
 
         if args.save_model == 'save/model' and not os.path.isdir('save'):
             os.makedirs('save')            
