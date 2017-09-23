@@ -1,15 +1,11 @@
 import tensorflow as tf
 
 
-STYLE_WEIGHTS = [ 0.5, 1.0, 1.5, 3.0, 4.0]
+STYLE_WEIGHTS = [0.2, 0.2, 0.2, 0.2, 0.2]
 
 
 def content_loss(image, content):
-    shape = image.get_shape()
-    N = shape[2]
-    M = shape[0] * shape[1]
-
-    return (1 / (4 * int(N * M))) * tf.reduce_sum(tf.pow(image - content, 2))
+    return 1/2 * tf.reduce_sum(tf.pow(image - content, 2))
 
 
 def style_loss(image_layers, style_layers):
