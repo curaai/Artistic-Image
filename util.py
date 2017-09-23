@@ -34,6 +34,7 @@ def load_image(image, IMAGE_WIDTH, IMAGE_HEIGHT):
 def save_image(path, image):
     image += MEAN
 
+    image = image[0]
     image = np.clip(image, 0, 255).astype('uint8')
 
     imsave(path, image)

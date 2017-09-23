@@ -20,7 +20,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--ALPHA', type=int, default=5, help='Used in train Content loss')
     parser.add_argument('--BETA', type=int, default=100, help='Used in train Style loss')
-    parser.add_argument('--learning_rate', type=float, default=2.0, help='Learning rate ...')
+    parser.add_argument('--learning_rate', type=float, default=1.0, help='Learning rate ...')
     parser.add_argument('--iteration', type=int, default=1, help='Train iteration count')
 
     args = parser.parse_args()
@@ -59,10 +59,10 @@ if __name__ == '__main__':
         print('Training Start !!!')
         sess.run(tf.global_variables_initializer())
         for i in range(args.iteration):
-            sess.run(optimizer, feed_dict={model.graph['input']: feed_images})
+            _, cost = sess.run([optimizer, total_loss], feed_dict={model.graph['input']: feed_images})
             if i % 2 == 0:
-                artistic_image, cost = sess.run(
-                    [model.graph['input'], total_loss],
+                artistic_image = sess.run(
+                    model.graph['input'],
                     feed_dict={model.graph['input']: numpy.reshape(input_image, (1,) + input_image.shape)})
                 
                 print("iteration:", str(i))
