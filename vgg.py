@@ -10,7 +10,7 @@ class Model:
         self.IMAGE_HEIGHT = IMAGE_HEIGHT
         self.IMAGE_CHANNEL = IMAGE_CHANNEL
 
-    def build(self):
+    def build(self, input):
         vgg = loadmat(self.model_path)
         vgg_layers = vgg['layers']
 
@@ -89,10 +89,9 @@ class Model:
 
         # each weight size (1, width, height, filter)
         graph = dict()
-        graph['input'] = tf.placeholder(tf.float32, [None, self.IMAGE_HEIGHT, self.IMAGE_WIDTH, self.IMAGE_CHANNEL])
         with tf.variable_scope("vggnet"):
             with tf.name_scope("conv1"):
-                graph['conv1_1']  = _conv2d_relu(graph['input'],    vgg_dict['conv1_1'], 'conv1_1')
+                graph['conv1_1']  = _conv2d_relu(input,             vgg_dict['conv1_1'], 'conv1_1')
                 graph['conv1_2']  = _conv2d_relu(graph['conv1_1'],  vgg_dict['conv1_2'], 'conv1_2')
                 graph['avgpool1'] = _avgpool(graph['conv1_2'])
             with tf.name_scope("conv2"):
@@ -119,3 +118,4 @@ class Model:
                 graph['avgpool5'] = _avgpool(graph['conv5_4'])
 
         self.graph = graph
+

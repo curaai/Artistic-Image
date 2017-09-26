@@ -20,28 +20,36 @@ if __name__ == '__main__':
 
     parser.add_argument('--ALPHA', type=int, default=1, help='Used in train Content loss')
     parser.add_argument('--BETA', type=int, default=1000, help='Used in train Style loss')
-    parser.add_argument('--learning_rate', type=float, default=0.001, help='Learning rate ...')
+    parser.add_argument('--learning_rate', type=float, default=0.1, help='Learning rate ...')
     parser.add_argument('--iteration', type=int, default=1000, help='Train iteration count')
 
     args = parser.parse_args()
 
     with tf.Graph().as_default(), tf.Session() as sess:
         width, height = args.image_width, args.image_height
-        content_image = util.load_image(args.content, width, height)
-        style_image = util.load_image(args.style, width, height)
-        input_image = util.generate_noise_image(content_image, width, height)
-        model = vgg.Model(args.model_path, width, height)
-        model.build()
+        model_path = args.model_path
+
+        image_content = util.load_image(args.content, width, height)
+        image_style = util.load_image(args.style, width, height)
 
         sess.run(tf.global_variables_initializer())
 
-        x_content = model.graph['conv4_2'][0]
-        x_style = [model.graph['conv' + str(i) + '_1'][0] for i in range(1, 6)]
+        pred_image = tf.Variable(tf.random_normal(content_image.shape))
+        style_image = tf.Variable(style_image)
+        content_image = tf.Variable(content_image)
 
-        y_content = model.graph['conv4_2'][1]
+        pred_net    = vgg.Model(model_path, width, height).build(pred_image)
+        style_net   = vgg.Model(model_path, width, height).build(style_image)
+        content_net = vgg.Model(model_path, width, height).build(content_image)
+
+
+        x_content = pred_net['conv4_2']
+        x_style = [pred_net['conv' + str(i) + '_1'] for i in range(1, 6)]
+
+        y_content = content_net['conv4_2']
         content_loss = loss.content_loss(x_content, y_content)
 
-        y_style = [model.graph['conv' + str(i) + '_1'][2] for i in range(1, 6)]
+        y_style = [style_net['conv' + str(i) + '_1'] for i in range(1, 6)]
         style_loss = loss.style_loss(x_style, y_style)
 
         total_loss = args.ALPHA * content_loss + args.BETA * style_loss
@@ -59,11 +67,9 @@ if __name__ == '__main__':
         print('Training Start !!!')
         sess.run(tf.global_variables_initializer())
         for i in range(args.iteration):
-            _, cost = sess.run([optimizer, total_loss], feed_dict={model.graph['input']: feed_images})
-            if i % 2 == 0:
-                artistic_image = sess.run(
-                    model.graph['input'],
-                    feed_dict={model.graph['input']: numpy.reshape(input_image, (1,) + input_image.shape)})
+            _, cost = sess.run([optimizer, total_loss])
+            if i % 50 == 0:
+                artistic_image = sess.run(pred_image)
                 
                 print("iteration:", str(i))
                 print("cost:", cost)
