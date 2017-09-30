@@ -14,8 +14,8 @@ def style_loss(image_layers, style_layers):
         return tf.matmul(tf.transpose(matrix), matrix)
 
     def _loss(a, x):
-        N = int(a.shape[2])
-        M = int(a.shape[0] * a.shape[1])
+        N = int(a.shape[3])
+        M = int(a.shape[1] * a.shape[2])
 
         A = _gram_matrix(a, N, M)
         X = _gram_matrix(x, N, M)

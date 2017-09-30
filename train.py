@@ -20,7 +20,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--ALPHA', type=int, default=1, help='Used in train Content loss')
     parser.add_argument('--BETA', type=int, default=1000, help='Used in train Style loss')
-    parser.add_argument('--learning_rate', type=float, default=0.1, help='Learning rate ...')
+    parser.add_argument('--learning_rate', type=float, default=0.001, help='Learning rate ...')
     parser.add_argument('--iteration', type=int, default=1000, help='Train iteration count')
 
     args = parser.parse_args()
@@ -31,16 +31,18 @@ if __name__ == '__main__':
 
         image_content = util.load_image(args.content, width, height)
         image_style = util.load_image(args.style, width, height)
+        image_input = util.generate_noise_image(image_content, width, height)
 
         sess.run(tf.global_variables_initializer())
 
-        pred_image = tf.Variable(tf.random_normal(content_image.shape))
-        style_image = tf.Variable(style_image)
-        content_image = tf.Variable(content_image)
+        pred_image = tf.Variable(image_input)
+        style_image = tf.constant(image_style)
+        content_image = tf.constant(image_content)
 
-        pred_net    = vgg.Model(model_path, width, height).build(pred_image)
-        style_net   = vgg.Model(model_path, width, height).build(style_image)
-        content_net = vgg.Model(model_path, width, height).build(content_image)
+        vgg_net = vgg.Model(model_path, width, height)
+        pred_net    = vgg_net.build(pred_image, 'pred', 0)
+        style_net   = vgg_net.build(style_image, 'style', 1)
+        content_net = vgg_net.build(content_image, 'content', 1)
 
 
         x_content = pred_net['conv4_2']
@@ -61,21 +63,19 @@ if __name__ == '__main__':
 
         saver = tf.train.Saver()
 
-        feed_images = numpy.array([input_image, content_image, style_image], dtype=numpy.float32)
-
         # train
         print('Training Start !!!')
         sess.run(tf.global_variables_initializer())
         for i in range(args.iteration):
-            _, cost = sess.run([optimizer, total_loss])
+            _, cost, artistic_image = sess.run([optimizer, total_loss, pred_image])
+            print("cost:", cost)
+            util.save_image(str(i) + '.jpg', artistic_image)
+
             if i % 50 == 0:
                 artistic_image = sess.run(pred_image)
-                
                 print("iteration:", str(i))
-                print("cost:", cost)
 
                 # save image
-                util.save_image(str(i) + '.jpg', artistic_image)
 
         if args.save_model == 'save/model' and not os.path.isdir('save'):
             os.makedirs('save')            
