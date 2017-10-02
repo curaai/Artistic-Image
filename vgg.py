@@ -12,7 +12,7 @@ class Model:
 
         self.vgg = loadmat(self.model_path)
 
-    def build(self, input, image_type, flag):
+    def build(self, input, image_type):
         vgg_layers = self.vgg['layers']
 
         vgg_dict = {vgg_layers[0][i][0][0][0][0]: i for i in range(len(vgg_layers[0]))}
@@ -74,14 +74,8 @@ class Model:
 
         def _conv2d(prev_layer, layer, name):
             W, b = _weights_and_bias(layer)
-
-            # if flag == 0 pred else images
-            if flag == 0:
-                W = tf.get_variable(name + "_weight", W.shape, dtype='float32', initializer=tf.constant_initializer(W))
-                b = tf.get_variable(name + "_bias", b.size, dtype='float32', initializer=tf.constant_initializer(b))
-            else:
-                W = tf.constant(W, dtype='float32')
-                b = tf.constant(np.reshape(b, b.size), dtype='float32')
+            W = tf.get_variable(name + "_weight", W.shape, dtype='float32', initializer=tf.constant_initializer(W))
+            b = tf.get_variable(name + "_bias", b.size, dtype='float32', initializer=tf.constant_initializer(b))
 
             return tf.nn.bias_add(tf.nn.conv2d(
                 prev_layer, W, strides=[1, 1, 1, 1], padding='SAME'
@@ -122,7 +116,6 @@ class Model:
                 graph['conv5_2']  = _conv2d_relu(graph['conv5_1'],  vgg_dict['conv5_2'], image_type + 'conv5_2')
                 graph['conv5_3']  = _conv2d_relu(graph['conv5_2'],  vgg_dict['conv5_3'], image_type + 'conv5_3')
                 graph['conv5_4']  = _conv2d_relu(graph['conv5_3'],  vgg_dict['conv5_4'], image_type + 'conv5_4')
-                graph['avgpool5'] = _avgpool(graph['conv5_4'])
 
         return graph
 
