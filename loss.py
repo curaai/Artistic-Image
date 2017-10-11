@@ -5,7 +5,10 @@ STYLE_WEIGHTS = [0.5, 1.0, 1.5, 3.0, 4.0]
 
 
 def content_loss(image, content):
-    return 1/2 * tf.reduce_sum(tf.pow(image - content, 2))
+    shape = image.shape
+    N = int(shape[3])
+    M = int(shape[1] * shape[2])
+    return (1 / N * M) * tf.reduce_sum(tf.pow(image - content, 2))
 
 
 def style_loss(image_layers, style_layers):

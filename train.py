@@ -18,9 +18,9 @@ if __name__ == '__main__':
     parser.add_argument('--image_height', type=int, default=600, help='image height')
     parser.add_argument('--save_model', default='save/model', help='Save Trained Model')
 
-    parser.add_argument('--ALPHA', type=int, default=0.025, help='Used in train Content loss')
-    parser.add_argument('--BETA', type=int, default=5.0, help='Used in train Style loss')
-    parser.add_argument('--learning_rate', type=float, default=0.1, help='Learning rate ...')
+    parser.add_argument('--ALPHA', type=int, default=1, help='Used in train Content loss')
+    parser.add_argument('--BETA', type=int, default=100, help='Used in train Style loss')
+    parser.add_argument('--learning_rate', type=float, default=0.001, help='Learning rate ...')
     parser.add_argument('--iteration', type=int, default=1000, help='Train iteration count')
 
     args = parser.parse_args()
@@ -31,10 +31,11 @@ if __name__ == '__main__':
 
         image_content = util.load_image(args.content, width, height)
         image_style = util.load_image(args.style, width, height)
+        image_input = util.generate_noise_image(image_content, width, height)
 
         sess.run(tf.global_variables_initializer())
 
-        pred_image = tf.Variable(tf.random_normal(image_content.shape, dtype=tf.float32))
+        pred_image = tf.Variable(image_input)
         style_image = tf.constant(image_style)
         content_image = tf.constant(image_content)
 
@@ -67,13 +68,14 @@ if __name__ == '__main__':
         sess.run(tf.global_variables_initializer())
         for i in range(args.iteration):
             _, cost, artistic_image = sess.run([optimizer, total_loss, pred_image])
-            if i % 10 == 0:
-                print("cost:", cost)
-                util.save_image('result/' + str(i) + '.jpg', artistic_image)
+            print("cost:", cost)
+            util.save_image(str(i) + '.jpg', artistic_image)
 
             if i % 50 == 0:
                 artistic_image = sess.run(pred_image)
                 print("iteration:", str(i))
+
+                # save image
 
         if args.save_model == 'save/model' and not os.path.isdir('save'):
             os.makedirs('save')            
