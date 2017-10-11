@@ -19,31 +19,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     with tf.Session() as sess:
-        model = vgg.load_vgg_model(args.model_path, args.image_width, args.image_height)
-        before = model
-
-        saver = tf.train.Saver()
-        saver.restore(sess, args.save_path)
-
-        if before == model:
-            print(" didnt load well")
-
-        image_list = []
-        if os.path.isdir(args.image_path):
-            image_list = [args.image_path + path for path in os.listdir(args.image_path)]
-        else:
-            image_list = [args.image_path]
-
-        # make output dir if not exist
-        if not os.path.isdir(args.output_path):
-            os.makedirs(args.output_path)
-
-        for file in image_list:
-            sess.run(tf.global_variables_initializer())
-
-            input_image = util.load_image(file, args.image_width, args.image_height)
-            sess.run(model['input'].assign(input_image))
-
-            # generate artistic image
-            generated = sess.run(model['input'])
-            util.save_image(args.output_path + "artistic_" + os.path.basename(file), generated)
+        pass

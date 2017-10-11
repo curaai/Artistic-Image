@@ -12,7 +12,7 @@ class Model:
 
         self.vgg = loadmat(self.model_path)
 
-    def build(self, input, image_type):
+    def build(self, input):
         vgg_layers = self.vgg['layers']
 
         vgg_dict = {vgg_layers[0][i][0][0][0][0]: i for i in range(len(vgg_layers[0]))}

@@ -5,7 +5,6 @@ from scipy.misc import imread, imresize, imsave
 MEAN = np.array([123.68, 116.779, 103.939]).reshape((1, 1, 1, 3))
 
 
-# TODO GENERATE_NOISE_IMAGE는 복붙했음 일단 결과부터 보고 나중에 공부하자
 def generate_noise_image(content_image, IMAGE_WIDTH, IMAGE_HEIGHT, noise_ratio = 0.6):
     """
     Returns a noise image intermixed with the content image at a certain ratio.
