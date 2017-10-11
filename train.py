@@ -20,7 +20,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--ALPHA', type=int, default=1, help='Used in train Content loss')
     parser.add_argument('--BETA', type=int, default=100, help='Used in train Style loss')
-    parser.add_argument('--learning_rate', type=float, default=0.001, help='Learning rate ...')
+    parser.add_argument('--learning_rate', type=float, default=2, help='Learning rate ...')
     parser.add_argument('--iteration', type=int, default=1000, help='Train iteration count')
 
     args = parser.parse_args()
@@ -46,10 +46,10 @@ if __name__ == '__main__':
             _, artistic_image, loss = vgg_net.train()
             
             if i % 50 == 0:
-                print("cost:", cost)
+                print("cost:", loss)
                 util.save_image(str(i) + '.jpg', artistic_image)
                 print("iteration:", str(i))
 
         if args.save_model == 'save/model' and not os.path.isdir('save'):
             os.makedirs('save')            
-        saver.save(sess, args.save_model)
+        vgg_net.saver.save(sess, args.save_model)

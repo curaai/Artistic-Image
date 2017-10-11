@@ -82,18 +82,18 @@ class Model:
         def _relu(conv2d_layer):
             return tf.nn.tanh(conv2d_layer)
 
-        def _conv2d(prev_layer, layer, name):
+        def _conv2d(prev_layer, layer):
             W, b = _weights_and_bias(layer)
             
-            W = tf.constant(W, dtype='float32', name=name + "_weight")
-            b = tf.constant(np.reshape(b, b.size), dtype='float32', name=name + "_bias")
+            W = tf.constant(W, dtype='float32')
+            b = tf.constant(np.reshape(b, b.size), dtype='float32')
             
             return tf.nn.bias_add(tf.nn.conv2d(
                 prev_layer, W, strides=[1, 1, 1, 1], padding='SAME'
             ), b)
 
-        def _conv2d_relu(prev_layer, layer, name):
-            return _relu(_conv2d(prev_layer, layer, name))
+        def _conv2d_relu(prev_layer, layer):
+            return _relu(_conv2d(prev_layer, layer))
 
         def _avgpool(layer):
             return tf.nn.avg_pool(
@@ -102,7 +102,7 @@ class Model:
         # each weight size (1, width, height, filter)
         graph = dict()
         with tf.variable_scope("vggnet"):
-            graph['input']  = tf.Variable(np.zeros((1, IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNEL)), dtype='float32')
+            graph['input']  = tf.Variable(np.zeros((1, self.IMAGE_HEIGHT, self.IMAGE_WIDTH, self.IMAGE_CHANNEL)), dtype='float32')
             with tf.name_scope("conv1"):
                 graph['conv1_1']  = _conv2d_relu(graph['input'] ,   vgg_dict['conv1_1'])
                 graph['conv1_2']  = _conv2d_relu(graph['conv1_1'],  vgg_dict['conv1_2'])
@@ -143,9 +143,11 @@ class Model:
         y_style = [self.graph['conv' + str(i) + '_1'] for i in range(1, 6)]
         style_loss = loss.style_loss(x_style, y_style)
 
-        self.total_loss = self.ALPHA * content_loss + self.BETA * style_loss
+        total_loss = self.ALPHA * content_loss + self.BETA * style_loss
+        self.total_loss = total_loss
 
-        self.optimizer = tf.train.AdamOptimizer(self.learning_rate).minimize(loss=total_loss)
+        optimizer = tf.train.AdamOptimizer(self.learning_rate).minimize(loss=total_loss)
+        self.optimizer = optimizer
         saver = tf.train.Saver()
         self.saver = saver
 
