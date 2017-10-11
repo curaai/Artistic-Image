@@ -1,19 +1,29 @@
 import tensorflow as tf
 import numpy as np
+import loss
 from scipy.io import loadmat
 
 
 class Model:
-    def __init__(self, model_path, IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_CHANNEL=3):
+    def __init__(self, model_path, IMAGE_WIDTH, IMAGE_HEIGHT, ALPHA, BETA, learning_rate, IMAGE_CHANNEL=3):
         self.model_path = model_path
         self.IMAGE_WIDTH = IMAGE_WIDTH
         self.IMAGE_HEIGHT = IMAGE_HEIGHT
         self.IMAGE_CHANNEL = IMAGE_CHANNEL
 
+        self.ALPHA = ALPHA 
+        self.BETA = BETA
+        self.learning_rate = learning_rate
+
         self.vgg = loadmat(self.model_path)
 
-    def build(self, input, image_type):
+    def build(self, sess, input, content, style):
         vgg_layers = self.vgg['layers']
+
+        self.sess = sess
+        self.input = input
+        self.content = content
+        self.style = style
 
         vgg_dict = {vgg_layers[0][i][0][0][0][0]: i for i in range(len(vgg_layers[0]))}
 
@@ -74,9 +84,10 @@ class Model:
 
         def _conv2d(prev_layer, layer, name):
             W, b = _weights_and_bias(layer)
-            W = tf.get_variable(name + "_weight", W.shape, dtype='float32', initializer=tf.constant_initializer(W))
-            b = tf.get_variable(name + "_bias", b.size, dtype='float32', initializer=tf.constant_initializer(b))
-
+            
+            W = tf.constant(W, dtype='float32', name=name + "_weight")
+            b = tf.constant(np.reshape(b, b.size), dtype='float32', name=name + "_bias")
+            
             return tf.nn.bias_add(tf.nn.conv2d(
                 prev_layer, W, strides=[1, 1, 1, 1], padding='SAME'
             ), b)
@@ -91,31 +102,59 @@ class Model:
         # each weight size (1, width, height, filter)
         graph = dict()
         with tf.variable_scope("vggnet"):
+            graph['input']  = tf.Variable(np.zeros((1, IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNEL)), dtype='float32')
             with tf.name_scope("conv1"):
-                graph['conv1_1']  = _conv2d_relu(input,             vgg_dict['conv1_1'], image_type + 'conv1_1')
-                graph['conv1_2']  = _conv2d_relu(graph['conv1_1'],  vgg_dict['conv1_2'], image_type + 'conv1_2')
+                graph['conv1_1']  = _conv2d_relu(graph['input'] ,   vgg_dict['conv1_1'])
+                graph['conv1_2']  = _conv2d_relu(graph['conv1_1'],  vgg_dict['conv1_2'])
                 graph['avgpool1'] = _avgpool(graph['conv1_2'])
             with tf.name_scope("conv2"):
-                graph['conv2_1']  = _conv2d_relu(graph['avgpool1'], vgg_dict['conv2_1'], image_type + 'conv2_1')
-                graph['conv2_2']  = _conv2d_relu(graph['conv2_1'],  vgg_dict['conv2_2'], image_type + 'conv2_2')
+                graph['conv2_1']  = _conv2d_relu(graph['avgpool1'], vgg_dict['conv2_1'])
+                graph['conv2_2']  = _conv2d_relu(graph['conv2_1'],  vgg_dict['conv2_2'])
                 graph['avgpool2'] = _avgpool(graph['conv2_2'])
             with tf.name_scope("conv3"):
-                graph['conv3_1']  = _conv2d_relu(graph['avgpool2'], vgg_dict['conv3_1'], image_type + 'conv3_1')
-                graph['conv3_2']  = _conv2d_relu(graph['conv3_1'],  vgg_dict['conv3_2'], image_type + 'conv3_2')
-                graph['conv3_3']  = _conv2d_relu(graph['conv3_2'],  vgg_dict['conv3_3'], image_type + 'conv3_3')
-                graph['conv3_4']  = _conv2d_relu(graph['conv3_3'],  vgg_dict['conv3_4'], image_type + 'conv3_4')
+                graph['conv3_1']  = _conv2d_relu(graph['avgpool2'], vgg_dict['conv3_1'])
+                graph['conv3_2']  = _conv2d_relu(graph['conv3_1'],  vgg_dict['conv3_2'])
+                graph['conv3_3']  = _conv2d_relu(graph['conv3_2'],  vgg_dict['conv3_3'])
+                graph['conv3_4']  = _conv2d_relu(graph['conv3_3'],  vgg_dict['conv3_4'])
                 graph['avgpool3'] = _avgpool(graph['conv3_4'])
             with tf.name_scope("conv4"):
-                graph['conv4_1']  = _conv2d_relu(graph['avgpool3'], vgg_dict['conv4_1'], image_type + 'conv4_1')
-                graph['conv4_2']  = _conv2d_relu(graph['conv4_1'],  vgg_dict['conv4_2'], image_type + 'conv4_2')
-                graph['conv4_3']  = _conv2d_relu(graph['conv4_2'],  vgg_dict['conv4_3'], image_type + 'conv4_3')
-                graph['conv4_4']  = _conv2d_relu(graph['conv4_3'],  vgg_dict['conv4_4'], image_type + 'conv4_4')
+                graph['conv4_1']  = _conv2d_relu(graph['avgpool3'], vgg_dict['conv4_1'])
+                graph['conv4_2']  = _conv2d_relu(graph['conv4_1'],  vgg_dict['conv4_2'])
+                graph['conv4_3']  = _conv2d_relu(graph['conv4_2'],  vgg_dict['conv4_3'])
+                graph['conv4_4']  = _conv2d_relu(graph['conv4_3'],  vgg_dict['conv4_4'])
                 graph['avgpool4'] = _avgpool(graph['conv4_4'])
             with tf.name_scope('conv5'):
-                graph['conv5_1']  = _conv2d_relu(graph['avgpool4'], vgg_dict['conv5_1'], image_type + 'conv5_1')
-                graph['conv5_2']  = _conv2d_relu(graph['conv5_1'],  vgg_dict['conv5_2'], image_type + 'conv5_2')
-                graph['conv5_3']  = _conv2d_relu(graph['conv5_2'],  vgg_dict['conv5_3'], image_type + 'conv5_3')
-                graph['conv5_4']  = _conv2d_relu(graph['conv5_3'],  vgg_dict['conv5_4'], image_type + 'conv5_4')
+                graph['conv5_1']  = _conv2d_relu(graph['avgpool4'], vgg_dict['conv5_1'])
+                graph['conv5_2']  = _conv2d_relu(graph['conv5_1'],  vgg_dict['conv5_2'])
+                graph['conv5_3']  = _conv2d_relu(graph['conv5_2'],  vgg_dict['conv5_3'])
+                graph['conv5_4']  = _conv2d_relu(graph['conv5_3'],  vgg_dict['conv5_4'])
 
-        return graph
+        self.graph = graph
 
+        sess.run(self.graph['input'].assign(self.input))
+        x_content = self.graph['conv4_2']
+        x_style = [self.graph['conv' + str(i) + '_1'] for i in range(1, 6)]
+
+        sess.run(self.graph['input'].assign(self.content))
+        y_content = self.graph['conv4_2']
+        content_loss = loss.content_loss(x_content, y_content)
+
+        sess.run(self.graph['input'].assign(self.style))
+        y_style = [self.graph['conv' + str(i) + '_1'] for i in range(1, 6)]
+        style_loss = loss.style_loss(x_style, y_style)
+
+        self.total_loss = self.ALPHA * content_loss + self.BETA * style_loss
+
+        self.optimizer = tf.train.AdamOptimizer(self.learning_rate).minimize(loss=total_loss)
+        saver = tf.train.Saver()
+        self.saver = saver
+
+    def pre_train(self):
+        self.sess.run(self.graph['input'].assign(self.input))
+
+    def train(self):
+         return self.sess.run([self.optimizer, self.graph['input'], self.total_loss])
+
+    def predict(self, image):
+        self.sess.run([self.graph['input'].assign(image)])
+        return self.sess.run([self.graph['input']])

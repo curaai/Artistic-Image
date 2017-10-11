@@ -35,47 +35,20 @@ if __name__ == '__main__':
 
         sess.run(tf.global_variables_initializer())
 
-        pred_image = tf.Variable(image_input)
-        style_image = tf.constant(image_style)
-        content_image = tf.constant(image_content)
-
-        vgg_net = vgg.Model(model_path, width, height)
-        pred_net    = vgg_net.build(pred_image, 'pred')
-        style_net   = vgg_net.build(style_image, 'style')
-        content_net = vgg_net.build(content_image, 'content')
-
-
-        x_content = pred_net['conv4_2']
-        x_style = [pred_net['conv' + str(i) + '_1'] for i in range(1, 6)]
-
-        y_content = content_net['conv4_2']
-        content_loss = loss.content_loss(x_content, y_content)
-
-        y_style = [style_net['conv' + str(i) + '_1'] for i in range(1, 6)]
-        style_loss = loss.style_loss(x_style, y_style)
-
-        total_loss = args.ALPHA * content_loss + args.BETA * style_loss
-
-        default_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
-        vgg_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='vggnet')
-
-        optimizer = tf.train.AdamOptimizer(args.learning_rate).minimize(loss=total_loss, var_list=default_vars + vgg_vars)
-
-        saver = tf.train.Saver()
-
+        vgg_net = vgg.Model(model_path, width, height, args.ALPHA, args.BETA, args.learning_rate)
+        vgg_net.build(sess, image_input, image_content, image_style)
+        
         # train
         print('Training Start !!!')
         sess.run(tf.global_variables_initializer())
         for i in range(args.iteration):
-            _, cost, artistic_image = sess.run([optimizer, total_loss, pred_image])
-            print("cost:", cost)
-            util.save_image(str(i) + '.jpg', artistic_image)
-
+            vgg_net.pre_train()
+            _, artistic_image, loss = vgg_net.train()
+            
             if i % 50 == 0:
-                artistic_image = sess.run(pred_image)
+                print("cost:", cost)
+                util.save_image(str(i) + '.jpg', artistic_image)
                 print("iteration:", str(i))
-
-                # save image
 
         if args.save_model == 'save/model' and not os.path.isdir('save'):
             os.makedirs('save')            
