@@ -73,7 +73,7 @@ if __name__ == '__main__':
 
             if i % 50 == 0:
                 artistic_image = sess.run(pred_image)
-                print("iteration: {0}, loss: {1}".format(i, loss))
+                print("iteration: {0}, loss: {1}".format(i, cost))
                 util.save_image(args.prog_path + str(i) + '.jpg', artistic_image)
 
                 # save image
