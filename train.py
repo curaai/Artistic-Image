@@ -17,10 +17,11 @@ if __name__ == '__main__':
     parser.add_argument('--image_width', type=int, default=800, help='image width')
     parser.add_argument('--image_height', type=int, default=600, help='image height')
     parser.add_argument('--save_model', default='save/model', help='Save Trained Model')
+    parser.add_argument('--prog_path', default='progress/', help="Save train progress images")
 
-    parser.add_argument('--ALPHA', type=int, default=1, help='Used in train Content loss')
+    parser.add_argument('--ALPHA', type=int, default=5, help='Used in train Content loss')
     parser.add_argument('--BETA', type=int, default=100, help='Used in train Style loss')
-    parser.add_argument('--learning_rate', type=float, default=0.001, help='Learning rate ...')
+    parser.add_argument('--learning_rate', type=float, default=2, help='Learning rate ...')
     parser.add_argument('--iteration', type=int, default=1000, help='Train iteration count')
 
     args = parser.parse_args()
@@ -69,12 +70,11 @@ if __name__ == '__main__':
         sess.run(tf.global_variables_initializer())
         for i in range(args.iteration):
             _, cost, artistic_image = sess.run([optimizer, total_loss, pred_image])
-            print("cost:", cost)
-            util.save_image(str(i) + '.jpg', artistic_image)
 
             if i % 50 == 0:
                 artistic_image = sess.run(pred_image)
-                print("iteration:", str(i))
+                print("iteration: {0}, loss: {1}".format(i, loss))
+                util.save_image(args.prog_path + str(i) + '.jpg', artistic_image)
 
                 # save image
 
