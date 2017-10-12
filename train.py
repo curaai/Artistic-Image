@@ -1,11 +1,11 @@
 import tensorflow as tf
 import argparse
 import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import util
 import loss
 import vgg
-import numpy
+import numpy as np
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 
 if __name__ == '__main__':
@@ -35,24 +35,25 @@ if __name__ == '__main__':
 
         sess.run(tf.global_variables_initializer())
 
-        pred_image = tf.Variable(image_input)
+        pred_image = tf.Variable(np.zeros((1, height, width, 3)), dtype=tf.float32)
         style_image = tf.constant(image_style)
         content_image = tf.constant(image_content)
 
         vgg_net = vgg.Model(model_path, width, height)
-        pred_net    = vgg_net.build(pred_image, 'pred')
-        style_net   = vgg_net.build(style_image, 'style')
-        content_net = vgg_net.build(content_image, 'content')
+        # get style layer from constant network
+        network = vgg_net.build(style_image, 0)
+        style_layer = [sess.run(network['conv' + str(i) + '_1']) for i in range(1, 6)]
+        # get content layer from constant network
+        network = vgg_net.build(content_image, 0)
+        content_layer = sess.run(network['conv4_2'])
 
+        # style transfer network
+        network = vgg_net.build(pred_image, 1)
+        pred_style = [network['conv' + str(i) + '_1'] for i in range(1, 6)]
+        pred_content = network['conv4_2']
 
-        x_content = pred_net['conv4_2']
-        x_style = [pred_net['conv' + str(i) + '_1'] for i in range(1, 6)]
-
-        y_content = content_net['conv4_2']
-        content_loss = loss.content_loss(x_content, y_content)
-
-        y_style = [style_net['conv' + str(i) + '_1'] for i in range(1, 6)]
-        style_loss = loss.style_loss(x_style, y_style)
+        style_loss = loss.style_loss(style_layer, pred_style)
+        content_loss = loss.content_loss(content_layer, pred_content)
 
         total_loss = args.ALPHA * content_loss + args.BETA * style_loss
 
